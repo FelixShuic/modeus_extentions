@@ -1,0 +1,29 @@
+{
+  "name": "Modeus Picker",
+  "description": "",
+  "version": "1.0",
+  "manifest_version": 3,
+  "action": {
+    "default_popup": "html/index.html"
+  },
+  "permissions": ["scripting", "webRequest", "webNavigation", "tabs", "activeTab", "storage"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "js/background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["/js/get-menu.js"],
+      "css": ["/css/loader.css"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["/js/menu.js"],
+      "css": ["/css/menu.css"],
+      "run_at": "document_start"
+    }
+  ]
+}
