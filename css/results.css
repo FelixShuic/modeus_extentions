@@ -1,0 +1,34 @@
+.container {
+    min-width: 400px;
+}
+
+.results {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    justify-content: start;
+    padding: 10px;
+}
+
+.results .result {
+    margin-bottom: 8px;
+    padding: 8px;
+}
+
+.results .result:last-child {
+    margin-bottom: 0;
+}
+
+.results .status {
+    margin-top: 4px;
+    font-size: 14px;
+    color: #666;
+}
+
+.results .status.success {
+    color: #28a745;
+}
+
+.results .status.error {
+    color: #dc3545;
+}

@@ -16,42 +16,55 @@ async function setSelectedGroup(group) {
       await chrome.storage.local.set({
         groups: groups["groups"].filter((g) => g.teamID != group.teamID),
       });
+      enableFiledset(group.subjectId)
     } else {
       await chrome.storage.local.set({ groups: [...groups["groups"], group] });
+      disableFieldset(group.subjectId)
     }
   }
   console.log('Set group: ', group);
 }
 
-function createSelect(teams, id) {
-            const select = document.createElement('select');
-            console.log(id)
-            select.name = id;
-            select.className = 'group-selector'
-            teams.push({
-                name: '-'
-            })
-            teams.sort((a, b) => a.name.localeCompare(b.name));
-            teams.forEach(team => {
-                const option = document.createElement('option');
-                option.value = team.id;
-                option.name = team.id;
-                option.textContent = team.name;
-                select.appendChild(option);
-            });
-            select.addEventListener('change', (event) => {
-              setSelectedGroup({
-                cycleID: id,
-                teamID: event.target.value,
-                title: event.target.selectedOptions[0].textContent
-              })
-            });
-            return select;
+function disableFieldset(subjectId) {
+    const fieldset = document.getElementById(subjectId)
+    fieldset.disabled = true
+}
+
+function enableFiledset(subjectId) {
+    const fieldset = document.getElementById(subjectId)
+    fieldset.disabled = false
+}
+
+function createSelect(subjectId, teams, id) {
+    const select = document.createElement('select');
+    select.name = id;
+    select.className = 'group-selector'
+    teams.push({
+        name: '-'
+    })
+    teams.sort((a, b) => a.name.localeCompare(b.name));
+    teams.forEach(team => {
+        const option = document.createElement('option');
+        option.value = team.id;
+        option.name = team.id;
+        option.textContent = team.name;
+        select.appendChild(option);
+    });
+    select.addEventListener('change', (event) => {
+        setSelectedGroup({
+            subjectId: subjectId,
+            cycleID: id,
+            teamID: event.target.value,
+            title: event.target.selectedOptions[0].textContent,
+            status: "waiting"
+        })
+    });
+    return select;
 }
             
 
 
-function createListItem(text, children) {
+function createListItem(id, text, children) {
     const li = document.createElement('li');
     
     const textSpan = document.createElement('span');
@@ -59,9 +72,13 @@ function createListItem(text, children) {
     li.appendChild(textSpan);
     
     if (children.length > 0) {
-        const nestedList = createNestedList(children, false);
+        const fieldset = document.createElement('fieldset')
+        fieldset.id = id
+        fieldset.style = "border:0"
+        const nestedList = createNestedList(id, children, false);
+        fieldset.appendChild(nestedList)
         li.className = 'list-item group group-bg';
-        li.appendChild(nestedList);
+        li.appendChild(fieldset);
     } 
     else {
         children.cycles.forEach((cycle) => {
@@ -75,7 +92,7 @@ function createListItem(text, children) {
     return li;
 }
 
-function createNestedList(items, root) {
+function createNestedList(currentSubjectId, items, root) {
     const ul = document.createElement('ul');
     if (root) {
         ul.className = 'nested-list';
@@ -83,10 +100,15 @@ function createNestedList(items, root) {
     else {
         ul.className = 'nested-list subject';
     }
-    
+
     items.forEach(item => {
         if (item.children.length > 0) {
-            const li = createListItem(item.name, item.children || []);
+            console.log(item.kind)
+            if (item.kind == "CourseItem" || item.kind == "CourseGroupItem") {
+                currentSubjectId = item.id
+            }
+            console.log(currentSubjectId)
+            const li = createListItem(currentSubjectId, item.name, item.children || []);
             ul.appendChild(li);
         } 
         else {
@@ -97,8 +119,8 @@ function createNestedList(items, root) {
             textSpan.textContent = item.name;
             li.appendChild(textSpan);
             item.cycles.forEach((cycle) => {
-                console.log(cycle.id)
-                let select = createSelect(cycle.teams, cycle.id);
+                console.log(currentSubjectId)
+                let select = createSelect(currentSubjectId, cycle.teams, cycle.id);
                 li.appendChild(select);
             })
             ul.appendChild(li);
@@ -165,9 +187,10 @@ function showResult(result, status) {
 }
 
 function createNestedListStructure(data) {
+    let currentSubjectId = ''
     const form = document.createElement('form');
     form.id = 'modeus-groups';
-    form.appendChild(createNestedList(data.items, true));
+    form.appendChild(createNestedList(currentSubjectId, data.items, true));
     const electivesTree = document.getElementsByClassName('electives-tree-list')[0]
     electivesTree.replaceChildren([]);
     electivesTree.className = 'modeus-helper-container'

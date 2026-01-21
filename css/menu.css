@@ -70,34 +70,3 @@
   border-color: #00a9e0;
   box-shadow: 0 0 0 3px rgba(0, 169, 224, 0.2);
 }
-
-.results {
-    display: flex;
-    flex-direction: column;
-    align-items: start;
-    justify-content: start;
-    padding: 10px;
-}
-
-.results .result {
-    margin-bottom: 8px;
-    padding: 8px;
-}
-
-.results .result:last-child {
-    margin-bottom: 0;
-}
-
-.results .status {
-    margin-top: 4px;
-    font-size: 14px;
-    color: #666;
-}
-
-.results .status.success {
-    color: #28a745;
-}
-
-.results .status.error {
-    color: #dc3545;
-}
