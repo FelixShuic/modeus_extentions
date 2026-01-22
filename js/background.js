@@ -42,13 +42,13 @@ async function getGroups(electives) {
 
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete') {
-    console.log("navigated! id:", tab)
+    console.log("navigated! id:", tab.id)
     if (menuRegEx.test(tab.url)) {
       const cachedGroup = await getCacheGroup(tab.url.slice(-36))
       if (cachedGroup) {
         chrome.tabs.sendMessage(tabId, {
           type: 'MODEUS_MENU_DATA',
-          menu: menu,
+          menu: tab.url.slice(-36),
           data: cachedGroup
         })
       }
@@ -58,9 +58,6 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 
 chrome.webRequest.onBeforeSendHeaders.addListener(
     async function (details) {
-        console.log('in listener')
-        console.log(currentUrl)
-        console.log(details.url)
         const cachedGroup = await getCacheGroup(details.url.slice(-36))
         if (menuAPIRegEx.test(details.url) && details.url != currentUrl && !cachedGroup) {
             currentUrl = details.url
@@ -85,6 +82,7 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
 
 chrome.runtime.onMessage.addListener(
     async function (message, sender, sendResponse) {
+        console.log('got an message')
         if (message.type == 'MODEUS_MENU_ID') {
             menu = message.data
         }
@@ -93,8 +91,10 @@ chrome.runtime.onMessage.addListener(
           console.log(cachedGroup)
           if (cachedGroup) {
             let tab = await getCurrentTab().then(response => response)
+            console.log(details.url.slice(-36))
             chrome.tabs.sendMessage(tab.id, {
               type: 'MODEUS_MENU_DATA',
+              menu: menu,
               data: cachedGroup
             })
           } else {
@@ -110,6 +110,14 @@ chrome.runtime.onMessage.addListener(
                 data: electives
               })
           }
+        }
+        if (message.type == 'GET_MENU_ID') {
+            let tab = await getCurrentTab().then(response => response)
+            await chrome.tabs.sendMessage(tab.id, {
+                type: 'SEND_MENU_ID',
+                menu: tab.url.slice(-36)
+            })
+            console.log('GET_MENU_ID request resived')
         }
     }
 );

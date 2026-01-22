@@ -1,28 +1,55 @@
 console.log('menu')
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+
+let menu
+
+let choosen
+
+chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     if (message.type == 'MODEUS_MENU_DATA') {
+        menu = message.menu
         console.log('Received updated data:', message.data);
+        console.log(message.menu)
         createNestedListStructure(message.data);
     }
 });
 
 async function setSelectedGroup(group) {
-  const groups = await chrome.storage.local.get("groups");
-  console.log(groups);
-  if (!groups["groups"]) {
-    await chrome.storage.local.set({ groups: [group] });
+  const menuData = await chrome.storage.local.get(menu);
+  console.log(group);
+  if (!menuData[menu]["choosen"]) {
+    menuData[menu]["choosen"] = [group]
+    await chrome.storage.local.set({ [menu]: menuData[menu] });
+    disableFieldset(group.subjectId)
   } else {
-    if (group.title == "-") {
-      await chrome.storage.local.set({
-        groups: groups["groups"].filter((g) => g.teamID != group.teamID),
-      });
-      enableFiledset(group.subjectId)
-    } else {
-      await chrome.storage.local.set({ groups: [...groups["groups"], group] });
+      menuData[menu]["choosen"] = [...menuData[menu]["choosen"], group]
+      await chrome.storage.local.set({ [menu]: menuData[menu] });
       disableFieldset(group.subjectId)
-    }
   }
+  createResetButton(group.subjectId, group.cycleId, group.teamId)
   console.log('Set group: ', group);
+}
+
+function createResetButton(subjectId, cycleId, teamId) {
+    const fieldset = document.getElementById(subjectId)
+    const parentLi = fieldset.closest('li');
+    const btn = document.createElement('button')
+    btn.textContent = "Сбросить выбор"
+    btn.style = "position:absolute;top:0;right:-10px"
+    btn.type = "button";
+    btn.onclick = () => resetChoose(subjectId, cycleId, teamId, btn);
+    parentLi.appendChild(btn)
+}
+
+async function resetChoose(subjectId, cycleId, teamId, btn) {
+    const select = document.getElementById(cycleId)
+    select.value = "undefined"
+    enableFieldset(subjectId)
+    const menuData = await chrome.storage.local.get(menu);
+    let choosen = menuData[menu]["choosen"]
+    choosen = choosen.filter((group) => group.teamId !== teamId)
+    menuData[menu]["choosen"] = choosen
+    await chrome.storage.local.set({ [menu]: menuData[menu] })
+    btn.remove();
 }
 
 function disableFieldset(subjectId) {
@@ -30,14 +57,26 @@ function disableFieldset(subjectId) {
     fieldset.disabled = true
 }
 
-function enableFiledset(subjectId) {
+function enableFieldset(subjectId) {
     const fieldset = document.getElementById(subjectId)
     fieldset.disabled = false
 }
 
+async function restoreChoosen() {
+    const menuData = await chrome.storage.local.get(menu)
+    let choosen = menuData[menu]["choosen"]
+    for (let group of choosen) {
+        let select = document.getElementById(group.cycleId)
+        select.value = group.teamId
+        let fieldset = document.getElementById(group.subjectId)
+        fieldset.disabled = true
+        createResetButton(group.subjectId, group.cycleId, group.teamId)
+    }
+}
+
 function createSelect(subjectId, teams, id) {
     const select = document.createElement('select');
-    select.name = id;
+    select.id = id;
     select.className = 'group-selector'
     teams.push({
         name: '-'
@@ -53,8 +92,8 @@ function createSelect(subjectId, teams, id) {
     select.addEventListener('change', (event) => {
         setSelectedGroup({
             subjectId: subjectId,
-            cycleID: id,
-            teamID: event.target.value,
+            cycleId: id,
+            teamId: event.target.value,
             title: event.target.selectedOptions[0].textContent,
             status: "waiting"
         })
@@ -78,6 +117,7 @@ function createListItem(id, text, children) {
         const nestedList = createNestedList(id, children, false);
         fieldset.appendChild(nestedList)
         li.className = 'list-item group group-bg';
+        li.style = 'position: relative'
         li.appendChild(fieldset);
     } 
     else {
@@ -189,11 +229,12 @@ function showResult(result, status) {
 function createNestedListStructure(data) {
     let currentSubjectId = ''
     const form = document.createElement('form');
-    form.id = 'modeus-groups';
+    form.id = 'modeus-groups'
     form.appendChild(createNestedList(currentSubjectId, data.items, true));
     const electivesTree = document.getElementsByClassName('electives-tree-list')[0]
     electivesTree.replaceChildren([]);
     electivesTree.className = 'modeus-helper-container'
-    electivesTree.appendChild(form)
+    electivesTree.appendChild(form);
     electivesTree.appendChild(createSubmitButton());
+    restoreChoosen();
 }

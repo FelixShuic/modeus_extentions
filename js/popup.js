@@ -1,3 +1,7 @@
+let menu
+
+console.log('popup')
+
 function createSubmitButton() {
   const button = document.createElement("button");
   button.textContent = "Отправить";
@@ -7,8 +11,9 @@ function createSubmitButton() {
 }
 
 async function submitGroups() {
-  const g = await chrome.storage.local.get("groups");
-  for (var group of g["groups"]) {
+  const menuData = await chrome.storage.local.get(menu);
+  const choosen = menuData[menu]["choosen"]
+  for (var group of choosen) {
     if (group.status != "success") {
       // console.log(pair[0]+ ', ' + pair[1]);
       // const res = await fetch(`https://urfu.modeus.org/learning-path-selection/api/menus/${menu}/elements/select`, {
@@ -27,10 +32,10 @@ async function submitGroups() {
       }
     }
   }
+  menuData[menu]["choosen"] = choosen
   const btn = document.getElementById("submit-button")
   btn.textContent = "Отправить повторно"
-  console.log(g)
-  await chrome.storage.local.set({groups: g["groups"]})
+  await chrome.storage.local.set({[menu]: menuData[menu]})
 }
 
 async function simulate() {
@@ -47,15 +52,23 @@ async function simulate() {
   };
 }
 
+async function getCurrentMenuId() {
+    let queryOptions = { active: true, lastFocusedWindow: true };
+    let [tab] = await chrome.tabs.query(queryOptions);
+    menu = tab.url.slice(-36)
+}
+
 async function createResults() {
-  const g = await chrome.storage.local.get("groups");
+  console.log('GET_MENU_ID request sent')
+  const menuData = await chrome.storage.local.get(menu);
+  const choosen = menuData[menu]["choosen"]
   const results = document.createElement("div");
   results.className = "results";
-  for (const group of g["groups"]) {
+  for (const group of choosen) {
     const result = document.createElement("div");
     result.className = "result";
     result.textContent = `${group.title}: `;
-    result.id = group.teamID;
+    result.id = group.teamId;
     const status = document.createElement("span");
     console.log(group.status)
     switch (group.status) {
@@ -82,7 +95,8 @@ async function createResults() {
 }
 
 function showResult(group, status) {
-  const result = document.getElementById(group.teamID);
+  console.log(group.teamId)
+  const result = document.getElementById(group.teamId);
   const span = result.lastChild
   if (status) {
     span.textContent = "Success";
@@ -95,10 +109,11 @@ function showResult(group, status) {
 
 
 async function setupPage() {
-    const resultsElement = await createResults();
-    const container = document.getElementById("container");
-    container.appendChild(resultsElement);
-    container.appendChild(createSubmitButton());
+  await getCurrentMenuId();
+  const resultsElement = await createResults();
+  const container = document.getElementById("container");
+  container.appendChild(resultsElement);
+  container.appendChild(createSubmitButton());
 }
 
 setupPage();
