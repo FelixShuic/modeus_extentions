@@ -63,12 +63,17 @@ async function resetChoose(subjectId, cycleId, teamId, btn) {
 
 function disableFieldset(subjectId) {
     const fieldset = document.getElementById(subjectId)
-    fieldset.disabled = true
+    if (fieldset) {
+        fieldset.classList.add('locked');
+        // fieldset.disabled = true; // Убираем или оставляем, если pointer-events достаточно
+    }
 }
 
 function enableFieldset(subjectId) {
     const fieldset = document.getElementById(subjectId)
-    fieldset.disabled = false
+    if (fieldset) {
+        fieldset.classList.remove('locked');
+    }
 }
 
 async function restoreChoosen() {

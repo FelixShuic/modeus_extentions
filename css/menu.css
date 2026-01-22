@@ -81,13 +81,31 @@
   padding: 10px;
   border-color: #ffffff;
   opacity: 0;
-  transition: opacity 0.1s ease, transform 0.1s ease;
+  transition: all 0.1s;
   transform: translateY(5px);
   cursor: pointer;
   box-shadow: -2px 2px 2px 3px rgba(0, 0, 0, 0.24);
 }
 
+.reset-btn:hover {
+  background-color: #238bc8ad;
+}
+
 .reset-btn.visible {
     opacity: 1;
     transform: translateY(0);
+}
+
+fieldset {
+    transition: opacity 0.4s ease, filter 0.4s ease;
+    opacity: 1;
+    filter: grayscale(0%);
+    pointer-events: auto; /* По умолчанию клики разрешены */
+}
+
+/* Состояние при блокировке */
+fieldset.locked {
+    opacity: 0.6; /* Степень затемнения */
+    filter: grayscale(50%); /* Дополнительный эффект обесцвечивания */
+    pointer-events: none; /* Блокирует выбор в select, но... */
 }
