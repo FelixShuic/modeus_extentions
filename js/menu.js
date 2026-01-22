@@ -34,10 +34,14 @@ function createResetButton(subjectId, cycleId, teamId) {
     const parentLi = fieldset.closest('li');
     const btn = document.createElement('button')
     btn.textContent = "Сбросить выбор"
-    btn.style = "position:absolute;top:0;right:-10px"
+    btn.style = "position:absolute;top:-5px;right:-10px"
+    btn.className = "reset-btn"
     btn.type = "button";
     btn.onclick = () => resetChoose(subjectId, cycleId, teamId, btn);
     parentLi.appendChild(btn)
+    requestAnimationFrame(() => {
+        btn.classList.add('visible');
+    });
 }
 
 async function resetChoose(subjectId, cycleId, teamId, btn) {
@@ -49,7 +53,12 @@ async function resetChoose(subjectId, cycleId, teamId, btn) {
     choosen = choosen.filter((group) => group.teamId !== teamId)
     menuData[menu]["choosen"] = choosen
     await chrome.storage.local.set({ [menu]: menuData[menu] })
-    btn.remove();
+
+    btn.classList.remove('visible');
+
+    setTimeout(() => {
+        btn.remove();
+    }, 100);
 }
 
 function disableFieldset(subjectId) {
@@ -235,6 +244,5 @@ function createNestedListStructure(data) {
     electivesTree.replaceChildren([]);
     electivesTree.className = 'modeus-helper-container'
     electivesTree.appendChild(form);
-    electivesTree.appendChild(createSubmitButton());
     restoreChoosen();
 }
