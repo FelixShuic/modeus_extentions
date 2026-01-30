@@ -195,17 +195,24 @@ function createSubmitButton() {
 async function submitGroups() {
     const form = document.getElementById('modeus-groups');
     const formData = new FormData(form);
-    for (var pair of formData.entries()) {
-        // console.log(pair[0]+ ', ' + pair[1]);
-        // const res = await fetch(`https://urfu.modeus.org/learning-path-selection/api/menus/${menu}/elements/select`, {
-        //   method: 'POST',
-        //   headers: {
-        //     'Content-Type': 'application/json'
-        //   },
-        //   body: pair[0]+ ', ' + pair[1]
-        // })
-        const res = await simulate();
-        showResult("test", res.status == 200)
+    let flag = false
+    while (!flag) {
+        flag = true
+        for (var pair of formData.entries()) {
+            // console.log(pair[0]+ ', ' + pair[1]);
+            // const res = await fetch(`https://urfu.modeus.org/learning-path-selection/api/menus/${menu}/elements/select`, {
+            //   method: 'POST',
+            //   headers: {
+            //     'Content-Type': 'application/json'
+            //   },
+            //   body: pair[0]+ ', ' + pair[1]
+            // })
+            const res = await simulate();
+            if (res.status != 200) {
+                flag = false
+            }
+            showResult("test", res.status == 200)
+        }
     }
 }
 

@@ -2,10 +2,11 @@ const CACHE_DURATION = 60 * 60 * 1000 * 24 * 5; // 5 days
 
 export async function setCacheGroup(menuID, groupsData) {
   const cachedGroup = {
+    choosen: [],
     data: groupsData,
     timestamp: Date.now()
   };
-  
+
   await chrome.storage.local.set({ [menuID]: cachedGroup });
   console.log('Cache set successfully');
 }

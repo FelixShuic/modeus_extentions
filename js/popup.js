@@ -13,22 +13,27 @@ function createSubmitButton() {
 async function submitGroups() {
   const menuData = await chrome.storage.local.get(menu);
   const choosen = menuData[menu]["choosen"]
-  for (var group of choosen) {
-    if (group.status != "success") {
-      // console.log(pair[0]+ ', ' + pair[1]);
-      // const res = await fetch(`https://urfu.modeus.org/learning-path-selection/api/menus/${menu}/elements/select`, {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json'
-      //   },
-      //   body: pair[0]+ ', ' + pair[1]
-      // })
-      const res = await simulate();
-      showResult(group, res.status == 200);
-      if (res.status == 200) {
-        group.status = "success"
-      } else {
-        group.status = "error"
+  let flag = false
+  while (!flag) {
+    flag = true
+    for (var group of choosen) {
+      if (group.status != "success") {
+        // console.log(pair[0]+ ', ' + pair[1]);
+        // const res = await fetch(`https://urfu.modeus.org/learning-path-selection/api/menus/${menu}/elements/select`, {
+        //   method: 'POST',
+        //   headers: {
+        //     'Content-Type': 'application/json'
+        //   },
+        //   body: pair[0]+ ', ' + pair[1]
+        // })
+        const res = await simulate();
+        showResult(group, res.status == 200);
+        if (res.status == 200) {
+          group.status = "success"
+        } else {
+          group.status = "error"
+          flag = false
+        }
       }
     }
   }

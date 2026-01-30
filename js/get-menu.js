@@ -29,7 +29,7 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
 
 function load() {
     const loading = document.createElement('span')
-    loading.classList.add('loader')
+    loading.classList.add('ext-loader')
     const desc = document.createElement('div')
     desc.textContent = 'Получение информации о группах...'
     desc.classList.add('desc')
