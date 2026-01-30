@@ -2,6 +2,13 @@ let menu
 
 console.log('popup')
 
+async function getCurrentTab() {
+    let queryOptions = { active: true, lastFocusedWindow: true };
+    let [tab] = await chrome.tabs.query(queryOptions);
+    console.log(tab)
+    return tab;
+}
+
 function createSubmitButton() {
   const button = document.createElement("button");
   button.textContent = "Отправить";
@@ -30,6 +37,11 @@ async function submitGroups() {
         showResult(group, res.status == 200);
         if (res.status == 200) {
           group.status = "success"
+          let tab = await getCurrentTab().then(response => response);
+          chrome.tabs.sendMessage(tab.id, {
+            type: 'CHOOSE_SUCCESS',
+            subjectId: group.subjectId
+          })
         } else {
           group.status = "error"
           flag = false

@@ -11,6 +11,10 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
         console.log(message.menu)
         createNestedListStructure(message.data);
     }
+    if (message.type == 'CHOOSE_SUCCESS') {
+        console.log(message)
+        lockResetButton(message.subjectId)
+    }
 });
 
 async function setSelectedGroup(group) {
@@ -42,6 +46,25 @@ function createResetButton(subjectId, cycleId, teamId) {
     requestAnimationFrame(() => {
         btn.classList.add('visible');
     });
+}
+
+function createLockedButton(subjectId) {
+    const fieldset = document.getElementById(subjectId)
+    const parentLi = fieldset.closest('li');
+    const btn = document.createElement('button')
+    btn.textContent = "Выбор сделан"
+    btn.style = "position:absolute;top:-5px;right:-10px"
+    btn.className = "reset-btn-locked visible"
+    btn.type = "button";
+    parentLi.appendChild(btn)
+}
+
+async function lockResetButton(subjectId) {
+    const subject = document.getElementById(subjectId)
+    const btn = subject.closest('li').lastChild
+    btn.textContent = "Выбор сделан"
+    btn.className = "reset-btn-locked visible"
+    // btn.disabled = true
 }
 
 async function resetChoose(subjectId, cycleId, teamId, btn) {
@@ -84,7 +107,11 @@ async function restoreChoosen() {
         select.value = group.teamId
         let fieldset = document.getElementById(group.subjectId)
         fieldset.disabled = true
-        createResetButton(group.subjectId, group.cycleId, group.teamId)
+        if (group.status == "success") {
+            createLockedButton(group.subjectId)
+        } else {
+            createResetButton(group.subjectId, group.cycleId, group.teamId)
+        }
     }
 }
 
