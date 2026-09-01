@@ -1,34 +1,111 @@
-.container {
-    min-width: 400px;
+:root {
+  color: #243447;
+  font-family: Arial, sans-serif;
+  background: #f5f7fa;
 }
 
-.results {
-    display: flex;
-    flex-direction: column;
-    align-items: start;
-    justify-content: start;
-    padding: 10px;
+body {
+  margin: 0;
 }
 
-.results .result {
-    margin-bottom: 8px;
-    padding: 8px;
+.popup {
+  box-sizing: border-box;
+  width: 420px;
+  max-height: 560px;
+  overflow-y: auto;
+  padding: 18px;
 }
 
-.results .result:last-child {
-    margin-bottom: 0;
+.popup__title {
+  margin: 0 0 14px;
+  font-size: 20px;
 }
 
-.results .status {
-    margin-top: 4px;
-    font-size: 14px;
-    color: #666;
+.popup__notice {
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.4;
 }
 
-.results .status.success {
-    color: #28a745;
+.popup__notice--info {
+  background: #eaf4ff;
+  color: #175887;
 }
 
-.results .status.error {
-    color: #dc3545;
+.popup__notice--success {
+  background: #e8f7ed;
+  color: #176b37;
+}
+
+.popup__notice--error {
+  background: #fdecec;
+  color: #9b2929;
+}
+
+.popup__results {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.popup__result {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px;
+  border: 1px solid #dce3ea;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.popup__result-names {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.popup__result-names span {
+  color: #66788a;
+  font-size: 12px;
+}
+
+.popup__status {
+  max-width: 190px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  text-align: right;
+}
+
+.popup__status--selected,
+.popup__status--waiting {
+  color: #866500;
+}
+
+.popup__status--success {
+  color: #178142;
+}
+
+.popup__status--error {
+  color: #b02a37;
+}
+
+.popup__submit {
+  width: 100%;
+  margin-top: 14px;
+  padding: 11px 14px;
+  border: 0;
+  border-radius: 7px;
+  color: #fff;
+  background: #168bd2;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.popup__submit:disabled {
+  cursor: wait;
+  opacity: 0.65;
 }

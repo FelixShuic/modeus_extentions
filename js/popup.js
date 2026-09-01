@@ -1,136 +1,133 @@
-let menu
+let menuId = null;
+let state = null;
+let notice = '';
+let noticeType = 'info';
+let submitting = false;
 
-console.log('popup')
+const container = document.getElementById('container');
 
-async function getCurrentTab() {
-    let queryOptions = { active: true, lastFocusedWindow: true };
-    let [tab] = await chrome.tabs.query(queryOptions);
-    console.log(tab)
-    return tab;
+function createElement(tag, className, text) {
+  const element = document.createElement(tag);
+  if (className) element.className = className;
+  if (text != null) element.textContent = text;
+  return element;
 }
 
-function createSubmitButton() {
-  const button = document.createElement("button");
-  button.textContent = "Отправить";
-  button.id = "submit-button";
-  button.addEventListener("click", submitGroups);
-  return button;
+async function request(payload) {
+  const response = await chrome.runtime.sendMessage(payload);
+  if (!response?.ok) throw new Error(response?.error || 'Расширение не ответило');
+  return response;
 }
 
-async function submitGroups() {
-  const menuData = await chrome.storage.local.get(menu);
-  const choosen = menuData[menu]["choosen"]
-  let flag = false
-  while (!flag) {
-    flag = true
-    for (var group of choosen) {
-      if (group.status != "success") {
-        // console.log(pair[0]+ ', ' + pair[1]);
-        // const res = await fetch(`https://urfu.modeus.org/learning-path-selection/api/menus/${menu}/elements/select`, {
-        //   method: 'POST',
-        //   headers: {
-        //     'Content-Type': 'application/json'
-        //   },
-        //   body: pair[0]+ ', ' + pair[1]
-        // })
-        const res = await simulate();
-        showResult(group, res.status == 200);
-        if (res.status == 200) {
-          group.status = "success"
-          let tab = await getCurrentTab().then(response => response);
-          chrome.tabs.sendMessage(tab.id, {
-            type: 'CHOOSE_SUCCESS',
-            subjectId: group.subjectId
-          })
-        } else {
-          group.status = "error"
-          flag = false
-        }
-      }
-    }
-  }
-  menuData[menu]["choosen"] = choosen
-  const btn = document.getElementById("submit-button")
-  btn.textContent = "Отправить повторно"
-  await chrome.storage.local.set({[menu]: menuData[menu]})
-}
-
-async function simulate() {
-  await new Promise((resolve) =>
-    setTimeout(resolve, Math.floor(Math.random() * 3) * 1000),
+function selections() {
+  return Object.values(state?.selected ?? {}).flatMap((selectedModule) =>
+    Object.values(selectedModule.cycles ?? {}).map((cycle) => ({
+      lessonName: selectedModule.lessonName,
+      ...cycle,
+    }))
   );
-  if (Math.random() < 0.33) {
-    return {
-      status: 500,
-    };
+}
+
+function statusLabel(selection) {
+  if (selection.status === 'success') return 'Отправлено';
+  if (selection.status === 'error') return selection.error || 'Ошибка';
+  return 'Выбрано';
+}
+
+async function submit(button) {
+  if (submitting) return;
+  submitting = true;
+  notice = 'Отправляю выбор…';
+  noticeType = 'info';
+  render();
+  try {
+    const response = await request({ type: 'SUBMIT_SELECTIONS', menuId });
+    state = response.state;
+    const failed = response.results.filter((result) => !result.success);
+    notice = failed.length === 0
+      ? 'Выбор успешно отправлен. Повторная отправка доступна.'
+      : `Не отправлено дисциплин: ${failed.length}. Ответ Modeus показан ниже.`;
+    noticeType = failed.length === 0 ? 'success' : 'error';
+  } catch (error) {
+    notice = error.message;
+    noticeType = 'error';
+  } finally {
+    submitting = false;
   }
-  return {
-    status: 200,
-  };
+  render();
 }
 
-async function getCurrentMenuId() {
-    let queryOptions = { active: true, lastFocusedWindow: true };
-    let [tab] = await chrome.tabs.query(queryOptions);
-    menu = tab.url.slice(-36)
-}
+function render() {
+  container.replaceChildren();
+  container.appendChild(createElement('h1', 'popup__title', 'Modeus Picker'));
 
-async function createResults() {
-  console.log('GET_MENU_ID request sent')
-  const menuData = await chrome.storage.local.get(menu);
-  const choosen = menuData[menu]["choosen"]
-  const results = document.createElement("div");
-  results.className = "results";
-  for (const group of choosen) {
-    const result = document.createElement("div");
-    result.className = "result";
-    result.textContent = `${group.title}: `;
-    result.id = group.teamId;
-    const status = document.createElement("span");
-    console.log(group.status)
-    switch (group.status) {
-      case "waiting":
-        status.className = "status";
-        status.textContent = "Wait for fetching";
-        break;
-      case "success":
-        status.className = "status success";
-        status.textContent = "Success";
-        break;
-      case "error":
-        status.className = "status error";
-        status.textContent = "Error";
-        break;
-      default:
-        status.className = "status";
-        status.textContent = "Unknown status";
-    }
-    result.appendChild(status);
-    results.appendChild(result);
+  if (!menuId) {
+    container.appendChild(createElement(
+      'div',
+      'popup__notice popup__notice--info',
+      'Откройте конкретное меню выбора Modeus. Страница со списком кампаний не подходит.'
+    ));
+    return;
   }
-  return results;
-}
 
-function showResult(group, status) {
-  console.log(group.teamId)
-  const result = document.getElementById(group.teamId);
-  const span = result.lastChild
-  if (status) {
-    span.textContent = "Success";
-    span.className = "status success";
-  } else {
-    span.textContent = "Error";
-    span.className = "status error";
+  if (notice) {
+    container.appendChild(createElement('div', `popup__notice popup__notice--${noticeType}`, notice));
   }
+
+  if (!state?.data) {
+    container.appendChild(createElement(
+      'div',
+      'popup__notice popup__notice--info',
+      state?.error || 'Данные групп ещё загружаются. Не закрывая страницу Modeus, обновите её.'
+    ));
+    return;
+  }
+
+  const selected = selections();
+  if (selected.length === 0) {
+    container.appendChild(createElement(
+      'div',
+      'popup__notice popup__notice--info',
+      'На странице Modeus выберите группы в панели Modeus Picker.'
+    ));
+    return;
+  }
+
+  const results = createElement('div', 'popup__results');
+  selected.forEach((selection) => {
+    const row = createElement('div', 'popup__result');
+    const names = createElement('div', 'popup__result-names');
+    names.append(
+      createElement('strong', '', selection.teamName),
+      createElement('span', '', `${selection.lessonName} · ${selection.cycleName}`)
+    );
+    const status = createElement(
+      'span',
+      `popup__status popup__status--${selection.status}`,
+      statusLabel(selection)
+    );
+    row.append(names, status);
+    results.appendChild(row);
+  });
+  container.appendChild(results);
+
+  const button = createElement('button', 'popup__submit', 'Отправить в Modeus');
+  button.type = 'button';
+  button.disabled = submitting;
+  button.addEventListener('click', () => submit(button));
+  container.appendChild(button);
 }
 
-
-async function setupPage() {
-  await getCurrentMenuId();
-  const resultsElement = await createResults();
-  const container = document.getElementById("container");
-  container.appendChild(resultsElement);
-  container.appendChild(createSubmitButton());
+async function init() {
+  try {
+    const response = await request({ type: 'GET_ACTIVE_CONTEXT' });
+    menuId = response.menuId;
+    state = response.state;
+  } catch (error) {
+    notice = error.message;
+    noticeType = 'error';
+  }
+  render();
 }
 
-setupPage();
+void init();
